@@ -8,9 +8,10 @@ on:
 
 jobs:
  test:
+   runs-on: ubuntu-latest
    steps:
-     - name: Print github.ref
-       run: echo Print github.ref: ${{ github.ref }}
+     - name: Print github ref
+       run: echo Print github ref ${{ github.ref }}
        
  deploy-staging:
   runs-on: ubuntu-latest
