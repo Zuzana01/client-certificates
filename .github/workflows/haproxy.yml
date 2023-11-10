@@ -7,6 +7,11 @@ on:
       - production
 
 jobs:
+ test:
+   steps:
+     - name: Print github.ref
+       run: echo Print github.ref: ${{ github.ref }}
+       
  deploy-staging:
   runs-on: ubuntu-latest
   if: github.ref == 'refs/heads/staging'
