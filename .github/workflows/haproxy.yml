@@ -1,0 +1,66 @@
+name: haproxy
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - staging
+      - production
+
+jobs:
+ deploy-staging:
+  runs-on: ubuntu-latest
+  if: github.ref == 'refs/heads/staging'
+  environment:
+     name: "staging"
+  steps:
+
+    - name: Checkout Repo
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{vars.AWS_ACCESS_KEY}}
+        aws-secret-access-key: ${{secrets.AWS_SECRET_KEY}}
+        aws-region: us-east-1
+
+    - name: Clean bundle
+      run: make clean
+
+    - name: Create bundle
+      run: make
+
+    - name: s3 upload
+      run: aws deploy push --region us-east-1 --application-name haproxy --s3-location s3://grocerkey-deploy-assets/haproxy.zip --source bundle/
+
+    - name: Create CodeDeploy deployment
+      run: aws deploy create-deployment --region us-east-1 --application-name haproxy --s3-location bucket=grocerkey-deploy-assets,key=haproxy.zip,bundleType=zip --deployment-group-name "haproxy" --deployment-config-name "CodeDeployDefault.AllAtOnce"
+
+ deploy-production:
+  runs-on: ubuntu-latest
+  if: github.ref == 'refs/heads/production'
+  environment:
+     name: "production"
+  steps:
+
+    - name: Checkout Repo
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{vars.AWS_ACCESS_KEY}}
+        aws-secret-access-key: ${{secrets.AWS_SECRET_KEY}}
+        aws-region: us-east-1
+
+    - name: Clean bundle
+      run: make clean
+
+    - name: Create bundle
+      run: make
+
+    - name: s3 upload
+      run: aws deploy push --region us-east-1 --application-name haproxy --s3-location s3://grocerkey-code-deploy/haproxy.zip --source bundle/
+
+    - name: Create CodeDeploy deployment
+      run: aws deploy create-deployment --region us-east-1 --application-name haproxy --s3-location bucket=grocerkey-code-deploy,key=haproxy.zip,bundleType=zip --deployment-group-name "haproxy" --deployment-config-name "CodeDeployDefault.OneAtATime"
